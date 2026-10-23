@@ -1,0 +1,6 @@
+{
+  "name": "UdhaarDesk - Kirana Credit & Khata",
+  "description": "Mobile web app for Indian kirana shop owners to track customer credit (udhaar), send 30-day payment reminders via WhatsApp, and collect instant UPI payments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
