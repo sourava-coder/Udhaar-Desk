@@ -97,7 +97,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } catch {
       // fallback
     }
-    return 'hi';
+    return 'en';
   });
 
   const setLanguage = (lang: AppLanguage) => {
