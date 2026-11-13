@@ -9,6 +9,7 @@ A mobile-first web app tailored for Kirana (grocery) shop owners in India to tra
 3. **Taqaza Screen (30+ Days Overdue)**: Filter customers with 30+ days due, preview formatted Hinglish reminders, and send 1-tap WhatsApp reminders with auto-generated UPI payment links.
 4. **Customer Khata Page**: Itemized ledger history, running balance, "Pay by UPI" deep link, and live counter QR code generator for instant payments.
 5. **Dukaan Hisaab (Owner Reports)**: Track weekly recovery amounts, total outstanding market credit, and top oldest dues ranking.
+6. **Customer Share Link**: WhatsApp bills and reminders include a live, view-only ledger link with all entries and a UPI payment button. Anyone with the link can view that customer's ledger; deleting the customer disables the link.
 
 ## How to Run Locally
 
@@ -29,10 +30,17 @@ Open your browser at `http://localhost:3000` (or the port displayed in your term
 Account login and shop ledgers use Supabase so the same email address and password can be used on multiple devices.
 
 1. Create a Supabase project and copy its Project URL and publishable (anon) key.
-2. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
-3. In the Supabase SQL Editor, run [`supabase/schema.sql`](./supabase/schema.sql).
-4. In Supabase Authentication, enable Email sign-in. If email confirmation is enabled, configure email delivery and confirm the address before signing in. Supabase requires passwords to be at least 6 characters.
-5. Restart the Vite server. Create the cloud account on one device, then log in on other devices with the same email and password.
+2. Set these values in `.env.local`:
+   ```env
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-publishable-key
+   VITE_APP_URL=https://your-public-app-domain.com
+   ```
+3. Set `VITE_APP_URL` to the public URL where the app is deployed (for example, `https://your-domain.com`). Localhost is not included in customer share links.
+4. In the Supabase SQL Editor, run [`supabase/schema.sql`](./supabase/schema.sql).
+   If Supabase was already set up, run the updated schema again to enable public, read-only customer ledger links.
+5. In Supabase Authentication, enable Email sign-in. If email confirmation is enabled, configure email delivery and confirm the address before signing in. Supabase requires passwords to be at least 6 characters.
+6. Restart the Vite server. Create the cloud account on one device, then log in on other devices with the same email and password.
 
 Only the publishable/anon key belongs in the frontend. Never expose the Supabase `service_role` key.
 

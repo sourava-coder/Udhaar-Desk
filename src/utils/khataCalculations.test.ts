@@ -7,6 +7,10 @@ import {
   calculateTotalDue,
   formatCurrency,
   generateUpiUrl,
+  generateCustomerShareUrl,
+  generateCustomerShareToken,
+  getCustomerShareBaseUrl,
+  generateWhatsAppBillMessage,
   generateWhatsAppReminderMessage,
 } from './khataCalculations';
 import { Customer, Transaction, ShopInfo } from '../types';
@@ -115,7 +119,55 @@ test('generateUpiUrl creates valid UPI deep link', () => {
   assert.ok(url.includes('am=750.00'));
 });
 
-test('generateWhatsAppReminderMessage includes amount, days and upi link', () => {
+test('generateCustomerShareUrl keeps the app path and replaces query and hash', () => {
+  assert.equal(
+    generateCustomerShareUrl('share-token', 'https://example.com/app?old=value#screen'),
+    'https://example.com/app?share=share-token'
+  );
+});
+
+test('getCustomerShareBaseUrl uses configured public URL and rejects localhost', () => {
+  assert.equal(
+    getCustomerShareBaseUrl('https://udhaardesk.example', 'http://localhost:3000/'),
+    'https://udhaardesk.example/'
+  );
+  assert.equal(getCustomerShareBaseUrl(undefined, 'http://localhost:3000/'), undefined);
+});
+
+test('generateCustomerShareToken creates a UUID v4 share token', () => {
+  const token = generateCustomerShareToken();
+  assert.ok(token);
+  assert.match(token, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+});
+
+test('generateWhatsAppBillMessage adds the live ledger link', () => {
+  const shop: ShopInfo = { name: 'Gupta Kirana', upiId: 'guptakirana@upi', phone: '' };
+  const customer: Customer = {
+    id: 'c1',
+    name: 'Ramesh',
+    phone: '9876543210',
+    createdAt: '2026-09-01',
+    transactions: [],
+  };
+  const transaction: Transaction = {
+    id: 't1',
+    type: 'UDHAAR',
+    amount: 500,
+    items: 'Rice',
+    date: '2026-10-01',
+  };
+
+  const message = generateWhatsAppBillMessage(
+    customer,
+    transaction,
+    shop,
+    500,
+    'https://example.com/?share=token'
+  );
+  assert.ok(message.includes('https://example.com/?share=token'));
+});
+
+test('generateWhatsAppReminderMessage includes amount, days, upi link and live ledger', () => {
   const shop: ShopInfo = {
     name: 'Gupta Kirana Store',
     upiId: 'guptakirana@upi',
@@ -129,10 +181,11 @@ test('generateWhatsAppReminderMessage includes amount, days and upi link', () =>
     transactions: [],
   };
 
-  const msg = generateWhatsAppReminderMessage(customer, 2450, 36, shop);
+  const msg = generateWhatsAppReminderMessage(customer, 2450, 36, shop, 'https://example.com/?share=token');
   assert.ok(msg.includes('Ramesh Tailor'));
   assert.ok(msg.includes('₹2,450'));
   assert.ok(msg.includes('36 days'));
   assert.ok(msg.includes('guptakirana@upi'));
   assert.ok(msg.includes('upi://pay?'));
+  assert.ok(msg.includes('https://example.com/?share=token'));
 });

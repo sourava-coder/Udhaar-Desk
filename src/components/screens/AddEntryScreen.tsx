@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useKhata } from '../../context/KhataContext';
-import { TransactionType } from '../../types';
+import { Customer, TransactionType } from '../../types';
 import {
   Receipt,
   UserPlus,
@@ -94,6 +94,7 @@ export const AddEntryScreen: React.FC = () => {
 
     let targetCustId = selectedCustId;
     let targetCustName = '';
+    let targetCustomer: Customer | undefined;
 
     if (isNewCust || selectedCustId === 'NEW') {
       if (!newName.trim()) {
@@ -103,6 +104,7 @@ export const AddEntryScreen: React.FC = () => {
       const created = addCustomer(newName, newPhone, newAddress);
       targetCustId = created.id;
       targetCustName = created.name;
+      targetCustomer = created;
     } else {
       const found = customers.find((c) => c.id === selectedCustId);
       if (!found) {
@@ -110,10 +112,12 @@ export const AddEntryScreen: React.FC = () => {
         return;
       }
       targetCustName = found.name;
+      targetCustomer = found;
     }
 
     const { waUrl } = addTransaction({
       customerId: targetCustId,
+      customer: targetCustomer,
       type: entryType,
       amount: numAmount,
       items: items.trim() || (entryType === 'UDHAAR' ? 'General Grocery / Goods' : 'Ledger Payment'),

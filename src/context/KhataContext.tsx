@@ -5,6 +5,9 @@ import {
   calculateOldestPendingDays,
   calculateTotalDue,
   calculateWeeklyRecovered,
+  getCustomerShareBaseUrl,
+  generateCustomerShareUrl,
+  generateCustomerShareToken,
   getWhatsAppWebUrl,
   generateWhatsAppBillMessage,
   generateWhatsAppReminderMessage,
@@ -65,6 +68,7 @@ interface KhataContextType {
   addCustomer: (name: string, phone: string, address?: string) => Customer;
   addTransaction: (params: {
     customerId: string;
+    customer?: Customer;
     type: TransactionType;
     amount: number;
     items: string;
@@ -75,6 +79,7 @@ interface KhataContextType {
   deleteTransaction: (customerId: string, transactionId: string) => void;
   deleteCustomer: (customerId: string) => void;
   showToast: (msg: string) => void;
+  getCustomerShareUrl: (customerId: string) => string | undefined;
   openWhatsAppReminder: (customerId: string) => void;
   openUpiQrForCustomer: (customerId: string) => void;
   resetToDefaultData: () => void;
@@ -417,6 +422,10 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     showToast('Dukaan UPI & details save ho gayi!');
   };
 
+  const getShareBaseUrl = () => {
+    return getCustomerShareBaseUrl(import.meta.env.VITE_APP_URL, window.location.href);
+  };
+
   const addCustomer = (name: string, phone: string, address?: string): Customer => {
     const newCust: Customer = {
       id: 'c_' + Date.now(),
@@ -432,6 +441,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const addTransaction = ({
     customerId,
+    customer: customerSeed,
     type,
     amount,
     items,
@@ -439,6 +449,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     sendWhatsApp = true,
   }: {
     customerId: string;
+    customer?: Customer;
     type: TransactionType;
     amount: number;
     items: string;
@@ -454,20 +465,28 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       createdAt: Date.now(),
     };
 
-    let updatedCust: Customer | null = null;
-    let newBalance = 0;
-
-    setCustomers((prev) =>
-      prev.map((c) => {
-        if (c.id === customerId) {
-          const updatedTxs = [...c.transactions, newTx];
-          newBalance = calculateCustomerBalance(updatedTxs);
-          updatedCust = { ...c, transactions: updatedTxs };
-          return updatedCust;
+    const existingCustomer = customers.find((c) => c.id === customerId) || customerSeed;
+    const updatedCustomer = existingCustomer
+      ? {
+          ...existingCustomer,
+          shareToken: sendWhatsApp
+            ? existingCustomer.shareToken || generateCustomerShareToken()
+            : existingCustomer.shareToken,
+          transactions: [...existingCustomer.transactions, newTx],
         }
-        return c;
-      })
-    );
+      : undefined;
+    const newBalance = updatedCustomer
+      ? calculateCustomerBalance(updatedCustomer.transactions)
+      : 0;
+
+    if (updatedCustomer) {
+      setCustomers((prev) => {
+        const found = prev.some((c) => c.id === customerId);
+        return found
+          ? prev.map((c) => (c.id === customerId ? updatedCustomer : c))
+          : [updatedCustomer, ...prev];
+      });
+    }
 
     // Audio feedback
     if (type === 'JAMA') {
@@ -479,10 +498,17 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     let waUrl: string | undefined;
-    const targetCustomer = updatedCust || customers.find((c) => c.id === customerId);
+    const targetCustomer = updatedCustomer;
 
     if (targetCustomer && sendWhatsApp && targetCustomer.phone) {
-      const msg = generateWhatsAppBillMessage(targetCustomer, newTx, shopInfo, newBalance);
+      const shareBaseUrl = getShareBaseUrl();
+      const ledgerUrl = targetCustomer.shareToken && shareBaseUrl
+        ? generateCustomerShareUrl(targetCustomer.shareToken, shareBaseUrl)
+        : undefined;
+      if (!ledgerUrl) {
+        showToast('Udhaar saved. Set VITE_APP_URL to your public app address to include a live ledger link.');
+      }
+      const msg = generateWhatsAppBillMessage(targetCustomer, newTx, shopInfo, newBalance, ledgerUrl);
       waUrl = getWhatsAppWebUrl(targetCustomer.phone, msg);
     }
 
@@ -528,15 +554,40 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     showToast('Grahak khata hata diya gaya');
   };
 
+  const getCustomerShareUrl = (customerId: string) => {
+    const customer = customers.find((c) => c.id === customerId);
+    if (!customer) return undefined;
+
+    const shareBaseUrl = getShareBaseUrl();
+    if (!shareBaseUrl) return undefined;
+
+    const shareToken = customer.shareToken || generateCustomerShareToken();
+    if (!shareToken) {
+      showToast('Secure ledger links are unavailable in this browser.');
+      return undefined;
+    }
+    if (!customer.shareToken) {
+      setCustomers((prev) =>
+        prev.map((c) => (c.id === customerId ? { ...c, shareToken } : c))
+      );
+    }
+    return generateCustomerShareUrl(shareToken, shareBaseUrl);
+  };
+
   const openWhatsAppReminder = (customerId: string) => {
     const cust = customers.find((c) => c.id === customerId);
     if (!cust) return;
     const balance = calculateCustomerBalance(cust.transactions);
     const days = calculateOldestPendingDays(cust.transactions);
-    const msg = generateWhatsAppReminderMessage(cust, balance, days, shopInfo);
+    const ledgerUrl = getCustomerShareUrl(customerId);
+    const msg = generateWhatsAppReminderMessage(cust, balance, days, shopInfo, ledgerUrl);
     const waUrl = getWhatsAppWebUrl(cust.phone, msg);
     window.open(waUrl, '_blank', 'noopener,noreferrer');
-    showToast(`WhatsApp taqaza bheja ja raha hai: ${cust.name}`);
+    showToast(
+      ledgerUrl
+        ? `WhatsApp taqaza bheja ja raha hai: ${cust.name}`
+        : 'Reminder opened without a live ledger link. Set VITE_APP_URL to your public app address.'
+    );
   };
 
   const openUpiQrForCustomer = (customerId: string) => {
@@ -611,6 +662,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         deleteTransaction,
         deleteCustomer,
         showToast,
+        getCustomerShareUrl,
         openWhatsAppReminder,
         openUpiQrForCustomer,
         resetToDefaultData,

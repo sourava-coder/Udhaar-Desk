@@ -11,6 +11,7 @@ export interface Transaction {
 
 export interface Customer {
   id: string;
+  shareToken?: string;
   name: string;
   phone: string;
   address?: string;

@@ -125,7 +125,8 @@ export function generateWhatsAppBillMessage(
   customer: Customer,
   tx: Transaction,
   shop: ShopInfo,
-  currentDue: number
+  currentDue: number,
+  ledgerUrl?: string
 ): string {
   const upiLink = generateUpiUrl({
     upiId: shop.upiId,
@@ -145,6 +146,7 @@ export function generateWhatsAppBillMessage(
       `---------------------------\n` +
       `📌 *Total Balance Due:* *${formatCurrency(currentDue)}*\n` +
       `---------------------------\n\n` +
+      (ledgerUrl ? `View your live ledger and payment options:\n👉 ${ledgerUrl}\n\n` : '') +
       (currentDue > 0
         ? `To pay securely via UPI (Google Pay, PhonePe, Paytm, BHIM), please click:\n👉 ${upiLink}\n\n`
         : '') +
@@ -159,6 +161,7 @@ export function generateWhatsAppBillMessage(
       `We have received your payment of *${formatCurrency(tx.amount)}*. Thank you!\n\n` +
       `📅 *Date:* ${tx.date}\n` +
       `📌 *Remaining Balance Due:* *${formatCurrency(currentDue)}*\n\n` +
+      (ledgerUrl ? `View your live ledger and payment options:\n👉 ${ledgerUrl}\n\n` : '') +
       `Store: *${shop.name}*`
     );
   }
@@ -171,7 +174,8 @@ export function generateWhatsAppReminderMessage(
   customer: Customer,
   balance: number,
   daysPending: number,
-  shop: ShopInfo
+  shop: ShopInfo,
+  ledgerUrl?: string
 ): string {
   const upiLink = generateUpiUrl({
     upiId: shop.upiId,
@@ -186,6 +190,7 @@ export function generateWhatsAppReminderMessage(
     `This is a gentle reminder that an outstanding payment of *${formatCurrency(balance)}* is pending for *${daysPending} days* on your ledger account.\n\n` +
     `Kindly clear your pending dues at your earliest convenience using the secure UPI link below:\n` +
     `👉 *Pay via UPI:* ${upiLink}\n\n` +
+    (ledgerUrl ? `View your live ledger and payment options:\n👉 ${ledgerUrl}\n\n` : '') +
     `Store UPI ID: \`${shop.upiId}\`\n` +
     `(Works on PhonePe, Google Pay, Paytm, BHIM, and all UPI apps)\n\n` +
     `If you have already made this payment, kindly share the receipt with us so we can update your ledger.\n\n` +
@@ -193,6 +198,40 @@ export function generateWhatsAppReminderMessage(
     `*${shop.name}*\n` +
     (shop.phone ? `Contact: ${shop.phone}` : '')
   );
+}
+
+export function generateCustomerShareUrl(shareToken: string, baseUrl: string): string {
+  const url = new URL(baseUrl);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('share', shareToken);
+  return url.toString();
+}
+
+export function getCustomerShareBaseUrl(configuredUrl: string | undefined, currentUrl: string): string | undefined {
+  const url = new URL(configuredUrl?.trim() || currentUrl);
+  const hostname = url.hostname.toLowerCase();
+  const isLoopback =
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('127.') ||
+    hostname === '[::1]' ||
+    hostname === '0.0.0.0';
+
+  return isLoopback ? undefined : url.toString();
+}
+
+export function generateCustomerShareToken(): string | undefined {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi?.getRandomValues) return undefined;
+
+  const bytes = cryptoApi.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 /**

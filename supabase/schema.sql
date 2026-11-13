@@ -28,6 +28,32 @@ create policy "Store owners can update their own data"
 
 grant select, insert, update on public.store_data to authenticated;
 
+create or replace function public.get_customer_share(p_token uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object(
+    'customer', jsonb_build_object(
+      'name', customer.value ->> 'name',
+      'transactions', coalesce(customer.value -> 'transactions', '[]'::jsonb)
+    ),
+    'shop', jsonb_build_object(
+      'name', data.shop_info ->> 'name',
+      'upiId', data.shop_info ->> 'upiId'
+    )
+  )
+  from public.store_data as data
+  cross join lateral jsonb_array_elements(coalesce(data.customers, '[]'::jsonb)) as customer(value)
+  where customer.value ->> 'shareToken' = p_token::text
+  limit 1;
+$$;
+
+revoke all on function public.get_customer_share(uuid) from public;
+grant execute on function public.get_customer_share(uuid) to anon, authenticated;
+
 create or replace function public.delete_my_account()
 returns void
 language plpgsql

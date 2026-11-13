@@ -37,6 +37,7 @@ export const CustomerKhataScreen: React.FC = () => {
     addTransaction,
     deleteTransaction,
     deleteCustomer,
+    getCustomerShareUrl,
     openUpiQrForCustomer,
     showToast,
   } = useKhata();
@@ -125,10 +126,21 @@ export const CustomerKhataScreen: React.FC = () => {
   const handleShareIndividualTx = (txId: string) => {
     const tx = customer.transactions.find((t) => t.id === txId);
     if (!tx) return;
-    const msg = generateWhatsAppBillMessage(customer, tx, shopInfo, balance);
+    const ledgerUrl = getCustomerShareUrl(customer.id);
+    const msg = generateWhatsAppBillMessage(
+      customer,
+      tx,
+      shopInfo,
+      balance,
+      ledgerUrl
+    );
     const waUrl = getWhatsAppWebUrl(customer.phone, msg);
     window.open(waUrl, '_blank', 'noopener,noreferrer');
-    showToast(t.whatsappLinkOpened);
+    showToast(
+      ledgerUrl
+        ? t.whatsappLinkOpened
+        : 'Receipt opened without a live ledger link. Set VITE_APP_URL to your public app address.'
+    );
   };
 
   const handleExecuteDeleteCustomer = () => {

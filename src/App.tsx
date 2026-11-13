@@ -11,6 +11,7 @@ import { AuthScreen } from './components/screens/AuthScreen';
 import { UpiModal } from './components/modals/UpiModal';
 import { QrModal } from './components/modals/QrModal';
 import { UserModal } from './components/modals/UserModal';
+import { CustomerShareScreen } from './components/screens/CustomerShareScreen';
 import { CheckCircle2, LoaderCircle } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -22,6 +23,11 @@ const AppContent: React.FC = () => {
     isCloudReady,
     cloudError,
   } = useKhata();
+  const shareToken = new URLSearchParams(window.location.search).get('share');
+
+  if (shareToken !== null) {
+    return <CustomerShareScreen token={shareToken} />;
+  }
 
   return (
     <div className="h-dvh w-full overflow-hidden bg-slate-50 selection:bg-indigo-600 selection:text-white relative">
