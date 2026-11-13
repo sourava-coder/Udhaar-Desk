@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, LoaderCircle, LockKeyhole, Store } from 'lucide-react';
+import { AlertCircle, CheckCircle2, LoaderCircle, LockKeyhole, QrCode, Store } from 'lucide-react';
+import QRCode from 'qrcode';
 import { Transaction } from '../../types';
 import { calculateCustomerBalance, formatCurrency, generateUpiUrl } from '../../utils/khataCalculations';
 import { supabase } from '../../utils/supabase';
@@ -62,6 +63,9 @@ export const CustomerShareScreen: React.FC<{ token: string }> = ({ token }) => {
   const [shareData, setShareData] = useState<CustomerShareData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+  const [qrCodeError, setQrCodeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) {
@@ -119,6 +123,38 @@ export const CustomerShareScreen: React.FC<{ token: string }> = ({ token }) => {
         })
       : null;
 
+  useEffect(() => {
+    if (!showQrCode || !paymentUrl) {
+        setQrCodeDataUrl('');
+        setQrCodeError(null);
+        return;
+    }
+
+    let isMounted = true;
+    void QRCode.toDataURL(paymentUrl, {
+        width: 240,
+        margin: 1.5,
+        color: {
+          dark: '#1e1b4b',
+          light: '#ffffff',
+        },
+    })
+        .then((dataUrl) => {
+          if (isMounted) setQrCodeDataUrl(dataUrl);
+        })
+        .catch((error: unknown) => {
+          if (isMounted) {
+            setQrCodeError(
+              `Could not create the payment QR code: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
+          }
+        });
+
+    return () => {
+        isMounted = false;
+    };
+  }, [showQrCode, paymentUrl]);
+
   return (
     <main className="min-h-dvh bg-slate-50 px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-xl space-y-4">
@@ -154,12 +190,45 @@ export const CustomerShareScreen: React.FC<{ token: string }> = ({ token }) => {
               </p>
 
               {balance > 0 && paymentUrl ? (
-                <a
-                  href={paymentUrl}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-sm font-black text-white shadow-md transition hover:bg-emerald-700"
-                >
-                  Pay {formatCurrency(balance)} via UPI
-                </a>
+                <div className="mt-4 space-y-3">
+                  <a
+                    href={paymentUrl}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-sm font-black text-white shadow-md transition hover:bg-emerald-700"
+                  >
+                    Pay {formatCurrency(balance)} via UPI
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setShowQrCode((visible) => !visible)}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-extrabold text-indigo-800 transition hover:bg-indigo-100"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    {showQrCode ? 'Hide UPI QR code' : 'Show UPI QR code'}
+                  </button>
+                  {showQrCode && (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
+                      {qrCodeDataUrl ? (
+                        <img
+                          src={qrCodeDataUrl}
+                          alt={`UPI payment QR code for ${formatCurrency(balance)}`}
+                          className="mx-auto h-60 w-60 max-w-full rounded-xl"
+                        />
+                      ) : qrCodeError ? (
+                        <p role="alert" className="text-sm font-semibold text-red-700">
+                          {qrCodeError}
+                        </p>
+                      ) : (
+                        <div className="flex items-center justify-center gap-2 py-8 text-sm font-semibold text-slate-500">
+                          <LoaderCircle className="h-5 w-5 animate-spin" />
+                          Creating payment QR code...
+                        </div>
+                      )}
+                      <p className="mt-2 text-xs font-semibold text-slate-500">
+                        Scan with any UPI app to pay {formatCurrency(balance)}.
+                      </p>
+                    </div>
+                  )}
+                </div>
               ) : balance <= 0 ? (
                 <p className="mt-3 flex items-center gap-2 text-sm font-bold text-emerald-700">
                   <CheckCircle2 className="h-5 w-5" /> No payment is currently due.
