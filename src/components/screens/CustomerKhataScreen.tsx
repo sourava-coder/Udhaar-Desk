@@ -376,8 +376,8 @@ export const CustomerKhataScreen: React.FC = () => {
 
       {/* QUICK JAMA MODAL */}
       {isJamaModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4">
+        <div className="safe-modal-overlay fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="safe-modal-panel bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
@@ -476,8 +476,8 @@ export const CustomerKhataScreen: React.FC = () => {
 
       {/* CONFIRM DELETE CUSTOMER MODAL */}
       {confirmDeleteCustomer && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4 text-center">
+        <div className="safe-modal-overlay fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="safe-modal-panel bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4 text-center">
             <div className="w-14 h-14 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
               <Trash2 className="w-7 h-7" />
             </div>
@@ -517,8 +517,8 @@ export const CustomerKhataScreen: React.FC = () => {
 
       {/* CONFIRM DELETE TRANSACTION MODAL */}
       {deletingTx && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4 text-center">
+        <div className="safe-modal-overlay fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="safe-modal-panel bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4 text-center">
             <div className="w-14 h-14 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
               <Trash2 className="w-7 h-7" />
             </div>

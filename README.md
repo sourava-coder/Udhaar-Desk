@@ -29,6 +29,10 @@ Open your browser at `http://localhost:3000` (or the port displayed in your term
 
 Account login and shop ledgers use Supabase so the same email address and password can be used on multiple devices.
 
+### Install on iPhone
+
+Deploy the app to an HTTPS address, open it in Safari on the iPhone, tap **Share**, then choose **Add to Home Screen**. Launch UdhaarDesk from the new Home Screen icon. Sign in with the same account to access the store ledger on multiple devices.
+
 1. Create a Supabase project and copy its Project URL and publishable (anon) key.
 2. Set these values in `.env.local`:
    ```env

@@ -11,20 +11,26 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['icon.png'],
+        includeAssets: ['icon.png', 'apple-touch-icon.png', 'pwa-192.png', 'pwa-512.png'],
         manifest: {
           name: 'UdhaarDesk - Kirana Credit & Khata',
           short_name: 'UdhaarDesk',
           description: 'Track customer credit, send reminders, and collect UPI payments.',
           theme_color: '#312e81',
-          background_color: '#fff8dc',
+          background_color: '#f8fafc',
           display: 'standalone',
           scope: '/',
           start_url: '/',
           icons: [
             {
-              src: '/icon.png',
-              sizes: '1024x1024',
+              src: '/pwa-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: '/pwa-512.png',
+              sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
             },

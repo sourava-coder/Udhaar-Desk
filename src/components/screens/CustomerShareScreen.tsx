@@ -156,7 +156,7 @@ export const CustomerShareScreen: React.FC<{ token: string }> = ({ token }) => {
   }, [showQrCode, paymentUrl]);
 
   return (
-    <main className="min-h-dvh bg-slate-50 px-4 py-8 sm:px-6">
+    <main className="share-page bg-slate-50 px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-xl space-y-4">
         <header className="rounded-3xl bg-indigo-950 p-5 text-white shadow-lg">
           <div className="flex items-center gap-2 text-indigo-200">

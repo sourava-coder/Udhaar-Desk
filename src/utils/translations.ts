@@ -21,6 +21,10 @@ export interface Translations {
   passwordMismatch: string;
   storeProfileUpdated: string;
   passwordUpdated: string;
+  showPassword: string;
+  hidePassword: string;
+  clipboardFailed: string;
+  missingUpiForQr: string;
   selectLanguage: string;
   upiSetup: string;
   alerts: string;
@@ -197,6 +201,10 @@ export const translations: Record<AppLanguage, Translations> = {
     passwordMismatch: 'The new passwords do not match.',
     storeProfileUpdated: 'Store profile updated.',
     passwordUpdated: 'Password changed successfully.',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    clipboardFailed: 'Could not copy to clipboard. Please try again.',
+    missingUpiForQr: 'Add your store UPI ID in UPI settings to create a payment QR code.',
     selectLanguage: 'Language',
     upiSetup: 'UPI',
     alerts: 'Alert',
@@ -365,6 +373,10 @@ export const translations: Record<AppLanguage, Translations> = {
     passwordMismatch: 'दोनों नए पासवर्ड मेल नहीं खाते।',
     storeProfileUpdated: 'दुकान प्रोफाइल अपडेट हो गई।',
     passwordUpdated: 'पासवर्ड सफलतापूर्वक बदल गया।',
+    showPassword: 'पासवर्ड दिखाएं',
+    hidePassword: 'पासवर्ड छिपाएं',
+    clipboardFailed: 'क्लिपबोर्ड पर कॉपी नहीं हुआ। कृपया फिर कोशिश करें।',
+    missingUpiForQr: 'पेमेंट QR बनाने के लिए UPI सेटिंग में अपनी दुकान की UPI ID जोड़ें।',
     selectLanguage: 'भाषा',
     upiSetup: 'UPI',
     alerts: 'अलर्ट',
@@ -533,6 +545,10 @@ export const translations: Record<AppLanguage, Translations> = {
     passwordMismatch: 'ଦୁଇଟି ନୂଆ ପାସୱାର୍ଡ ମେଳ ଖାଉନାହିଁ।',
     storeProfileUpdated: 'ଦୋକାନ ପ୍ରୋଫାଇଲ୍ ଅପଡେଟ୍ ହୋଇଛି।',
     passwordUpdated: 'ପାସୱାର୍ଡ ସଫଳତାର ସହିତ ବଦଳିଛି।',
+    showPassword: 'ପାସୱାର୍ଡ ଦେଖାନ୍ତୁ',
+    hidePassword: 'ପାସୱାର୍ଡ ଲୁଚାନ୍ତୁ',
+    clipboardFailed: 'କ୍ଲିପବୋର୍ଡକୁ କପି ହୋଇପାରିଲା ନାହିଁ। ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।',
+    missingUpiForQr: 'ପେମେଣ୍ଟ QR ତିଆରି କରିବାକୁ UPI ସେଟିଂରେ ଦୋକାନର UPI ID ଯୋଡ଼ନ୍ତୁ।',
     selectLanguage: 'ଭାଷା',
     upiSetup: 'UPI',
     alerts: 'ଚେତାବନୀ',

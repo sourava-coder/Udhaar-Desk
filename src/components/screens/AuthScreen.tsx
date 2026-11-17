@@ -13,6 +13,8 @@ import {
   CreditCard,
   MapPin,
   Globe,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
@@ -24,6 +26,7 @@ export const AuthScreen: React.FC = () => {
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [isLoginPasswordVisible, setIsLoginPasswordVisible] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Signup form state
@@ -31,6 +34,7 @@ export const AuthScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [shopName, setShopName] = useState('');
   const [password, setPassword] = useState('');
+  const [isSignupPasswordVisible, setIsSignupPasswordVisible] = useState(false);
   const [upiId, setUpiId] = useState('');
   const [address, setAddress] = useState('');
   const [signupError, setSignupError] = useState<string | null>(null);
@@ -272,15 +276,28 @@ export const AuthScreen: React.FC = () => {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={isSignupPasswordVisible ? 'text' : 'password'}
                   required
                   minLength={6}
                   autoComplete="new-password"
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold"
+                  className={`w-full pl-9 pr-10 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold ${
+                    isSignupPasswordVisible ? 'password-text-reveal' : ''
+                  }`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setIsSignupPasswordVisible((visible) => !visible)}
+                  aria-label={isSignupPasswordVisible ? t.hidePassword : t.showPassword}
+                  title={isSignupPasswordVisible ? t.hidePassword : t.showPassword}
+                  className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-slate-400 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-r-xl"
+                >
+                  <span key={String(isSignupPasswordVisible)} className="password-eye-icon">
+                    {isSignupPasswordVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -384,15 +401,28 @@ export const AuthScreen: React.FC = () => {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={isLoginPasswordVisible ? 'text' : 'password'}
                   required
                   minLength={6}
                   autoComplete="current-password"
                   placeholder="PIN"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold"
+                  className={`w-full pl-9 pr-10 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold ${
+                    isLoginPasswordVisible ? 'password-text-reveal' : ''
+                  }`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setIsLoginPasswordVisible((visible) => !visible)}
+                  aria-label={isLoginPasswordVisible ? t.hidePassword : t.showPassword}
+                  title={isLoginPasswordVisible ? t.hidePassword : t.showPassword}
+                  className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-slate-400 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-r-xl"
+                >
+                  <span key={String(isLoginPasswordVisible)} className="password-eye-icon">
+                    {isLoginPasswordVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </span>
+                </button>
               </div>
             </div>
 

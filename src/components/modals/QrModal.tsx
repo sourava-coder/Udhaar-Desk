@@ -3,11 +3,13 @@ import { useKhata } from '../../context/KhataContext';
 import { calculateCustomerBalance, formatCurrency, generateUpiUrl } from '../../utils/khataCalculations';
 import QRCode from 'qrcode';
 import { X, Copy, ExternalLink, Check, Smartphone, ArrowDownRight } from 'lucide-react';
+import { copyTextToClipboard } from '../../utils/clipboard';
 
 export const QrModal: React.FC = () => {
-  const { isQrModalOpen, setIsQrModalOpen, qrModalCustomer, shopInfo, showToast, quickRecordJama } =
+  const { isQrModalOpen, setIsQrModalOpen, qrModalCustomer, shopInfo, showToast, quickRecordJama, t } =
     useKhata();
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [qrCodeError, setQrCodeError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [customAmount, setCustomAmount] = useState<number | ''>('');
 
@@ -31,9 +33,16 @@ export const QrModal: React.FC = () => {
   }, [isQrModalOpen, qrModalCustomer, customerBalance]);
 
   useEffect(() => {
-    if (!isQrModalOpen || !shopInfo.upiId) return;
+    let isMounted = true;
+    setQrCodeDataUrl('');
+    setQrCodeError(null);
+    if (!isQrModalOpen) return;
+    if (!shopInfo.upiId) {
+      setQrCodeError(t.missingUpiForQr);
+      return;
+    }
 
-    QRCode.toDataURL(upiUrl, {
+    void QRCode.toDataURL(upiUrl, {
       width: 280,
       margin: 1.5,
       color: {
@@ -41,17 +50,33 @@ export const QrModal: React.FC = () => {
         light: '#ffffff',
       },
     })
-      .then((url) => setQrCodeDataUrl(url))
-      .catch((err) => console.error('Failed to generate QR code', err));
-  }, [isQrModalOpen, upiUrl, shopInfo.upiId]);
+      .then((url) => {
+        if (isMounted) setQrCodeDataUrl(url);
+      })
+      .catch((error: unknown) => {
+        if (isMounted) {
+          setQrCodeError(
+            error instanceof Error ? `Could not generate QR code: ${error.message}` : 'Could not generate QR code.'
+          );
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isQrModalOpen, upiUrl, shopInfo.upiId, t.missingUpiForQr]);
 
   if (!isQrModalOpen || !qrModalCustomer) return null;
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(upiUrl);
-    setCopied(true);
-    showToast('UPI Pay Link copy ho gaya!');
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyLink = async () => {
+    try {
+      await copyTextToClipboard(upiUrl);
+      setCopied(true);
+      showToast('UPI Pay Link copy ho gaya!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast(t.clipboardFailed);
+    }
   };
 
   const handleMarkPaid = () => {
@@ -61,8 +86,8 @@ export const QrModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-      <div className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl border border-slate-200 text-center relative max-h-[95vh] overflow-y-auto">
+    <div className="safe-modal-overlay fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+      <div className="safe-modal-panel bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl border border-slate-200 text-center relative max-h-[95vh] overflow-y-auto">
         <button
           onClick={() => setIsQrModalOpen(false)}
           className="absolute right-4 top-4 p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
@@ -101,7 +126,11 @@ export const QrModal: React.FC = () => {
 
         {/* QR Code Container */}
         <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-indigo-200 inline-block shadow-sm">
-          {qrCodeDataUrl ? (
+          {qrCodeError ? (
+            <p role="alert" className="w-56 min-h-56 flex items-center justify-center text-xs text-rose-700">
+              {qrCodeError}
+            </p>
+          ) : qrCodeDataUrl ? (
             <img
               src={qrCodeDataUrl}
               alt="UPI QR Code"
@@ -129,8 +158,11 @@ export const QrModal: React.FC = () => {
         {/* Action Buttons */}
         <div className="space-y-2 mt-4">
           <a
-            href={upiUrl}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition text-sm"
+            href={shopInfo.upiId ? upiUrl : undefined}
+            aria-disabled={!shopInfo.upiId}
+            className={`w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition text-sm ${
+              shopInfo.upiId ? '' : 'pointer-events-none opacity-50'
+            }`}
           >
             <ExternalLink className="w-4 h-4" />
             <span>Pay by UPI ({formatCurrency(currentAmount)})</span>
@@ -139,7 +171,8 @@ export const QrModal: React.FC = () => {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleCopyLink}
-              className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+              disabled={!shopInfo.upiId}
+              className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition disabled:cursor-not-allowed disabled:opacity-50"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
               <span>{copied ? 'Link Copied!' : 'Copy UPI Link'}</span>

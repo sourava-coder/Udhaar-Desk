@@ -31,7 +31,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="shrink-0 bg-indigo-900 text-white px-2.5 sm:px-4 lg:px-8 py-2.5 sticky top-0 z-40 shadow-md border-b border-indigo-800">
+    <header className="safe-header shrink-0 bg-indigo-900 text-white px-2.5 sm:px-4 lg:px-8 pb-2.5 sticky top-0 z-40 shadow-md border-b border-indigo-800">
       <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-2">
         {/* Left: Brand & Shop Info */}
         <div

@@ -7,6 +7,7 @@ import {
   generateWhatsAppReminderMessage,
 } from '../../utils/khataCalculations';
 import { Customer } from '../../types';
+import { copyTextToClipboard } from '../../utils/clipboard';
 import {
   Bell,
   AlertTriangle,
@@ -55,11 +56,15 @@ export const ReminderScreen: React.FC = () => {
     setCurrentScreen('customer');
   };
 
-  const handleCopyMessage = (msg: string) => {
-    navigator.clipboard.writeText(msg);
-    setCopied(true);
-    showToast('English reminder copied to clipboard!');
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyMessage = async (msg: string) => {
+    try {
+      await copyTextToClipboard(msg);
+      setCopied(true);
+      showToast('English reminder copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast(t.clipboardFailed);
+    }
   };
 
   return (
@@ -194,8 +199,8 @@ export const ReminderScreen: React.FC = () => {
 
       {/* MODAL: PREVIEW ENGLISH REMINDER MESSAGE */}
       {previewCustomer && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4">
+        <div className="safe-modal-overlay fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="safe-modal-panel bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-emerald-600" />

@@ -421,8 +421,8 @@ export const AddEntryScreen: React.FC = () => {
 
       {/* POST-SAVE CONFIRMATION MODAL */}
       {savedResult && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl text-center space-y-4">
+        <div className="safe-modal-overlay fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="safe-modal-panel bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl text-center space-y-4">
             <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
               <CheckCircle2 className="w-8 h-8" />
             </div>

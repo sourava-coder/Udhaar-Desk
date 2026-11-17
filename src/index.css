@@ -2,12 +2,14 @@
 
 @layer base {
   html {
+    height: 100%;
     min-height: 100%;
     background: #f8fafc;
   }
 
   body {
     min-width: 320px;
+    min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
@@ -15,12 +17,42 @@
   }
 
   #root {
+    min-height: 100vh;
     min-height: 100dvh;
+  }
+
+  .app-shell {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .safe-header {
+    padding-top: calc(0.625rem + env(safe-area-inset-top));
+  }
+
+  .share-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: max(2rem, env(safe-area-inset-top));
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
   }
 
   .app-content {
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y pinch-zoom;
+  }
+
+  .safe-modal-overlay {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-modal-panel {
+    max-height: calc(100vh - max(1rem, env(safe-area-inset-top)) - max(1rem, env(safe-area-inset-bottom)));
+    max-height: calc(100dvh - max(1rem, env(safe-area-inset-top)) - max(1rem, env(safe-area-inset-bottom)));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   @media (max-width: 640px) {
@@ -39,4 +71,42 @@
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+@keyframes password-text-reveal {
+  from {
+    filter: blur(4px);
+    opacity: 0.65;
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+@keyframes password-eye-toggle {
+  from {
+    opacity: 0.5;
+    transform: scale(0.75) rotate(-20deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+.password-text-reveal {
+  animation: password-text-reveal 240ms ease-out;
+}
+
+.password-eye-icon {
+  display: inline-flex;
+  animation: password-eye-toggle 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .password-text-reveal,
+  .password-eye-icon {
+    animation: none;
+  }
 }

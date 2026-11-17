@@ -30,7 +30,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="h-dvh w-full overflow-hidden bg-slate-50 selection:bg-indigo-600 selection:text-white relative">
+    <div className="app-shell w-full overflow-hidden bg-slate-50 selection:bg-indigo-600 selection:text-white relative">
       <div className="relative flex h-full w-full flex-col overflow-hidden bg-slate-50">
         <Header />
 

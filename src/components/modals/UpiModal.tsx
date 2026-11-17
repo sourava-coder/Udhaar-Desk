@@ -45,8 +45,8 @@ export const UpiModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-      <div className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+    <div className="safe-modal-overlay fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+      <div className="safe-modal-panel bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-indigo-50 text-indigo-700 rounded-xl">
