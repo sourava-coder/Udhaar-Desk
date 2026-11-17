@@ -41,6 +41,14 @@ interface KhataContextType {
     upiId?: string;
     address?: string;
   }) => Promise<{ success: boolean; error?: string; message?: string; user?: User }>;
+  updateStoreProfile: (profile: {
+    name: string;
+    shopName: string;
+    phone: string;
+    upiId: string;
+    address: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   deleteAccount: (userId: string) => Promise<void>;
 
@@ -378,6 +386,100 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return { success: true, user: newUser };
   };
 
+  const updateStoreProfile = async (profile: {
+    name: string;
+    shopName: string;
+    phone: string;
+    upiId: string;
+    address: string;
+  }) => {
+    if (!supabase || !currentUser) {
+      return { success: false, error: 'You must be signed in to update your store profile.' };
+    }
+    if (readyUserId !== currentUser.id) {
+      return { success: false, error: 'Wait for your store data to finish loading, then try again.' };
+    }
+
+    const updatedShopName = profile.shopName.trim();
+    const updatedOwnerName = profile.name.trim();
+    if (!updatedShopName || !updatedOwnerName) {
+      return { success: false, error: 'Your name and store name are required.' };
+    }
+
+    const nextShopInfo: ShopInfo = {
+      name: updatedShopName,
+      upiId: profile.upiId.trim(),
+      phone: profile.phone.trim(),
+      address: profile.address.trim(),
+    };
+
+    try {
+      const { data: savedProfile, error: saveError } = await supabase
+        .from('store_data')
+        .update({ shop_info: nextShopInfo, updated_at: new Date().toISOString() })
+        .eq('user_id', currentUser.id)
+        .select('user_id')
+        .maybeSingle();
+      if (saveError) return { success: false, error: `Could not save store details: ${saveError.message}` };
+      if (!savedProfile) return { success: false, error: 'Your store profile record was not found. Refresh and try again.' };
+
+      const { data, error } = await supabase.auth.updateUser({
+        data: {
+          name: updatedOwnerName,
+          shop_name: updatedShopName,
+          shop_phone: profile.phone.trim(),
+          upi_id: profile.upiId.trim(),
+          address: profile.address.trim(),
+        },
+      });
+      if (error) {
+        const { error: rollbackError } = await supabase
+          .from('store_data')
+          .update({ shop_info: shopInfo, updated_at: new Date().toISOString() })
+          .eq('user_id', currentUser.id);
+        return {
+          success: false,
+          error: rollbackError
+            ? `${error.message} Store details could not be rolled back: ${rollbackError.message}`
+            : error.message,
+        };
+      }
+
+      const updatedUser = toUser(data.user);
+      setCurrentUser(updatedUser);
+      setShopInfo(nextShopInfo);
+      showToast(t.storeProfileUpdated);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Could not update store profile.' };
+    }
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!supabase || !currentUser?.email) {
+      return { success: false, error: 'A signed-in email account is required to change the password.' };
+    }
+    if (newPassword.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters.' };
+    }
+
+    try {
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: currentUser.email,
+        password: currentPassword,
+      });
+      if (verifyError) return { success: false, error: 'Current password is incorrect.' };
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return { success: false, error: error.message };
+
+      showToast(t.passwordUpdated);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Could not change password.' };
+    }
+  };
+
   // Auth: Logout
   const logout = async () => {
     if (!supabase) return;
@@ -634,6 +736,8 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setIsUserModalOpen,
         login,
         signup,
+        updateStoreProfile,
+        changePassword,
         logout,
         deleteAccount,
 

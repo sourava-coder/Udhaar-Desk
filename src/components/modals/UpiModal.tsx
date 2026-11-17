@@ -28,6 +28,7 @@ export const UpiModal: React.FC = () => {
       name: name.trim(),
       upiId: upiId.trim(),
       phone: phone.trim(),
+      address: shopInfo.address,
     });
     setIsUpiModalOpen(false);
   };

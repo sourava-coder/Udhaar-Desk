@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useKhata } from '../../context/KhataContext';
 import {
   X,
@@ -13,6 +13,8 @@ import {
   Trash2,
   MapPin,
   AlertTriangle,
+  KeyRound,
+  Pencil,
 } from 'lucide-react';
 import { formatCurrency } from '../../utils/khataCalculations';
 
@@ -22,6 +24,9 @@ export const UserModal: React.FC = () => {
     isUserModalOpen,
     setIsUserModalOpen,
     deleteAccount,
+    updateStoreProfile,
+    changePassword,
+    shopInfo,
     logout,
     totalDue,
     customers,
@@ -29,8 +34,72 @@ export const UserModal: React.FC = () => {
   } = useKhata();
 
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [mode, setMode] = useState<'view' | 'profile' | 'password'>('view');
+  const [ownerName, setOwnerName] = useState('');
+  const [shopName, setShopName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [address, setAddress] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isUserModalOpen || !currentUser) return;
+    setOwnerName(currentUser.name);
+    setShopName(shopInfo.name || currentUser.shopName);
+    setPhone(shopInfo.phone);
+    setUpiId(shopInfo.upiId);
+    setAddress(shopInfo.address || '');
+  }, [isUserModalOpen, currentUser, shopInfo]);
 
   if (!isUserModalOpen || !currentUser) return null;
+
+  const handleProfileSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setActionError(null);
+    setIsSubmitting(true);
+    try {
+      const result = await updateStoreProfile({ name: ownerName, shopName, phone, upiId, address });
+      if (!result.success) {
+        setActionError(result.error || 'Could not update store profile.');
+        return;
+      }
+      setMode('view');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePasswordChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setActionError(null);
+    if (newPassword !== confirmPassword) {
+      setActionError(t.passwordMismatch);
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await changePassword(currentPassword, newPassword);
+      if (!result.success) {
+        setActionError(result.error || 'Could not change password.');
+        return;
+      }
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setMode('view');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const returnToProfile = () => {
+    setActionError(null);
+    setMode('view');
+  };
 
   const handleExecuteDelete = async () => {
     await deleteAccount(currentUser.id);
@@ -58,6 +127,8 @@ export const UserModal: React.FC = () => {
           <button
             onClick={() => {
               setIsConfirmingDelete(false);
+              setMode('view');
+              setActionError(null);
               setIsUserModalOpen(false);
             }}
             className="p-1 rounded-full text-indigo-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
@@ -115,6 +186,56 @@ export const UserModal: React.FC = () => {
               </button>
             </div>
           </div>
+        ) : mode === 'profile' ? (
+          <form onSubmit={handleProfileSave} className="p-4 overflow-y-auto space-y-3 text-slate-800">
+            <h4 className="font-extrabold text-sm text-slate-900">{t.editStoreProfile}</h4>
+            {actionError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700">{actionError}</p>}
+            <label className="block text-xs font-bold text-slate-700">
+              {t.yourFullName}
+              <input required value={ownerName} onChange={(event) => setOwnerName(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              {t.yourShopName}
+              <input required value={shopName} onChange={(event) => setShopName(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              {t.shopPhoneLabel}
+              <input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              {t.upiVpaLabel}
+              <input value={upiId} onChange={(event) => setUpiId(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              {t.shopAddressOptional}
+              <input value={address} onChange={(event) => setAddress(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={returnToProfile} className="flex-1 rounded-xl bg-slate-100 py-2.5 text-xs font-bold text-slate-700">{t.cancelAction}</button>
+              <button type="submit" disabled={isSubmitting} className="flex-1 rounded-xl bg-indigo-700 py-2.5 text-xs font-bold text-white disabled:opacity-50">{isSubmitting ? '...' : t.saveChanges}</button>
+            </div>
+          </form>
+        ) : mode === 'password' ? (
+          <form onSubmit={handlePasswordChange} className="p-4 overflow-y-auto space-y-3 text-slate-800">
+            <h4 className="font-extrabold text-sm text-slate-900">{t.changePassword}</h4>
+            {actionError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700">{actionError}</p>}
+            <label className="block text-xs font-bold text-slate-700">
+              {t.currentPasswordLabel}
+              <input type="password" required autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              {t.newPasswordLabel}
+              <input type="password" required minLength={6} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              {t.confirmNewPasswordLabel}
+              <input type="password" required minLength={6} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={returnToProfile} className="flex-1 rounded-xl bg-slate-100 py-2.5 text-xs font-bold text-slate-700">{t.cancelAction}</button>
+              <button type="submit" disabled={isSubmitting} className="flex-1 rounded-xl bg-indigo-700 py-2.5 text-xs font-bold text-white disabled:opacity-50">{isSubmitting ? '...' : t.updatePassword}</button>
+            </div>
+          </form>
         ) : (
           /* Normal Profile View */
           <div className="p-4 overflow-y-auto space-y-4 text-slate-800">
@@ -195,6 +316,22 @@ export const UserModal: React.FC = () => {
 
             {/* Account Actions */}
             <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => { setActionError(null); setMode('profile'); }}
+                className="w-full py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <Pencil className="w-4 h-4" />
+                <span>{t.editStoreProfile}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActionError(null); setMode('password'); }}
+                className="w-full py-2.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>{t.changePassword}</span>
+              </button>
               {/* Logout Button */}
               <button
                 onClick={logout}

@@ -11,6 +11,16 @@ export interface Translations {
   logout: string;
   switchAccount: string;
   myAccount: string;
+  editStoreProfile: string;
+  changePassword: string;
+  currentPasswordLabel: string;
+  newPasswordLabel: string;
+  confirmNewPasswordLabel: string;
+  saveChanges: string;
+  updatePassword: string;
+  passwordMismatch: string;
+  storeProfileUpdated: string;
+  passwordUpdated: string;
   selectLanguage: string;
   upiSetup: string;
   alerts: string;
@@ -177,6 +187,16 @@ export const translations: Record<AppLanguage, Translations> = {
     logout: 'Log Out',
     switchAccount: 'Switch Store',
     myAccount: 'Store Profile',
+    editStoreProfile: 'Edit Store Profile',
+    changePassword: 'Change Password',
+    currentPasswordLabel: 'Current Password',
+    newPasswordLabel: 'New Password',
+    confirmNewPasswordLabel: 'Confirm New Password',
+    saveChanges: 'Save Changes',
+    updatePassword: 'Update Password',
+    passwordMismatch: 'The new passwords do not match.',
+    storeProfileUpdated: 'Store profile updated.',
+    passwordUpdated: 'Password changed successfully.',
     selectLanguage: 'Language',
     upiSetup: 'UPI',
     alerts: 'Alert',
@@ -335,6 +355,16 @@ export const translations: Record<AppLanguage, Translations> = {
     logout: 'लॉग आउट',
     switchAccount: 'दुकान बदलें',
     myAccount: 'दुकानदार प्रोफाइल',
+    editStoreProfile: 'दुकान प्रोफाइल बदलें',
+    changePassword: 'पासवर्ड बदलें',
+    currentPasswordLabel: 'मौजूदा पासवर्ड',
+    newPasswordLabel: 'नया पासवर्ड',
+    confirmNewPasswordLabel: 'नया पासवर्ड दोबारा लिखें',
+    saveChanges: 'बदलाव सेव करें',
+    updatePassword: 'पासवर्ड अपडेट करें',
+    passwordMismatch: 'दोनों नए पासवर्ड मेल नहीं खाते।',
+    storeProfileUpdated: 'दुकान प्रोफाइल अपडेट हो गई।',
+    passwordUpdated: 'पासवर्ड सफलतापूर्वक बदल गया।',
     selectLanguage: 'भाषा',
     upiSetup: 'UPI',
     alerts: 'अलर्ट',
@@ -493,6 +523,16 @@ export const translations: Record<AppLanguage, Translations> = {
     logout: 'ଲଗ୍ ଆଉଟ୍',
     switchAccount: 'ଦୋକାନ ବଦଳାନ୍ତୁ',
     myAccount: 'ଦୋକାନୀ ପ୍ରୋଫାଇଲ୍',
+    editStoreProfile: 'ଦୋକାନ ପ୍ରୋଫାଇଲ୍ ବଦଳାନ୍ତୁ',
+    changePassword: 'ପାସୱାର୍ଡ ବଦଳାନ୍ତୁ',
+    currentPasswordLabel: 'ବର୍ତ୍ତମାନର ପାସୱାର୍ଡ',
+    newPasswordLabel: 'ନୂଆ ପାସୱାର୍ଡ',
+    confirmNewPasswordLabel: 'ନୂଆ ପାସୱାର୍ଡ ପୁଣି ଲେଖନ୍ତୁ',
+    saveChanges: 'ପରିବର୍ତ୍ତନ ସେଭ୍ କରନ୍ତୁ',
+    updatePassword: 'ପାସୱାର୍ଡ ଅପଡେଟ୍ କରନ୍ତୁ',
+    passwordMismatch: 'ଦୁଇଟି ନୂଆ ପାସୱାର୍ଡ ମେଳ ଖାଉନାହିଁ।',
+    storeProfileUpdated: 'ଦୋକାନ ପ୍ରୋଫାଇଲ୍ ଅପଡେଟ୍ ହୋଇଛି।',
+    passwordUpdated: 'ପାସୱାର୍ଡ ସଫଳତାର ସହିତ ବଦଳିଛି।',
     selectLanguage: 'ଭାଷା',
     upiSetup: 'UPI',
     alerts: 'ଚେତାବନୀ',
