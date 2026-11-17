@@ -49,6 +49,15 @@ test('calculateOldestPendingDays accurately calculates days from oldest unpaid u
   assert.equal(days >= 30, true);
 });
 
+test('calculateOldestPendingDays counts date-only entries consistently at local midnight', () => {
+  const asOf = new Date(2026, 10, 21, 0, 1);
+  const transactions: Transaction[] = [
+    { id: '1', type: 'UDHAAR', amount: 500, items: 'Flour', date: '2026-10-22' },
+  ];
+
+  assert.equal(calculateOldestPendingDays(transactions, asOf), 30);
+});
+
 test('calculateWeeklyRecovered sums Jama within the 7-day window', () => {
   const asOf = new Date('2026-10-22');
   const mockCustomers: Customer[] = [

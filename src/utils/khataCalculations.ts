@@ -52,8 +52,19 @@ export function calculateOldestPendingDays(
     oldestUnpaidDate = udhaars[0].date;
   }
 
-  const unpaidTime = new Date(oldestUnpaidDate).getTime();
-  const currentTime = asOfDate.getTime();
+  const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(oldestUnpaidDate);
+  if (!dateParts) return 0;
+
+  const unpaidTime = Date.UTC(
+    Number(dateParts[1]),
+    Number(dateParts[2]) - 1,
+    Number(dateParts[3])
+  );
+  const currentTime = Date.UTC(
+    asOfDate.getFullYear(),
+    asOfDate.getMonth(),
+    asOfDate.getDate()
+  );
   const diffMs = currentTime - unpaidTime;
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   return Math.max(0, days);

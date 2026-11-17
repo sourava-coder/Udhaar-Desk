@@ -38,7 +38,24 @@ as $$
   select jsonb_build_object(
     'customer', jsonb_build_object(
       'name', customer.value ->> 'name',
-      'transactions', coalesce(customer.value -> 'transactions', '[]'::jsonb)
+      'transactions', coalesce(
+        (
+          select jsonb_agg(
+            jsonb_build_object(
+              'id', entry.value -> 'id',
+              'type', entry.value -> 'type',
+              'amount', entry.value -> 'amount',
+              'items', entry.value -> 'items',
+              'date', entry.value -> 'date'
+            )
+            order by entry.ordinality
+          )
+          from jsonb_array_elements(
+            coalesce(customer.value -> 'transactions', '[]'::jsonb)
+          ) with ordinality as entry(value, ordinality)
+        ),
+        '[]'::jsonb
+      )
     ),
     'shop', jsonb_build_object(
       'name', data.shop_info ->> 'name',

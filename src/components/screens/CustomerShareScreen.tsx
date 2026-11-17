@@ -87,7 +87,7 @@ export const CustomerShareScreen: React.FC<{ token: string }> = ({ token }) => {
         const { data, error } = await client.rpc('get_customer_share', { p_token: token });
         if (!isMounted) return;
         if (error) {
-          setErrorMessage(`Could not load this ledger: ${error.message}`);
+          setErrorMessage('This ledger is temporarily unavailable. Please try again later.');
         } else {
           const parsed = parseShareData(data);
           if (parsed) {
@@ -97,11 +97,9 @@ export const CustomerShareScreen: React.FC<{ token: string }> = ({ token }) => {
           }
         }
         setIsLoading(false);
-      } catch (error) {
+      } catch {
         if (!isMounted) return;
-        setErrorMessage(
-          `Could not load this ledger: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
+        setErrorMessage('This ledger is temporarily unavailable. Please try again later.');
         setIsLoading(false);
       }
     };

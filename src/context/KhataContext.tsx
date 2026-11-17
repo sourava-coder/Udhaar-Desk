@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Customer, ShopInfo, ScreenId, TransactionType, Transaction, User } from '../types';
 import {
   calculateCustomerBalance,
@@ -134,6 +134,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [shopInfo, setShopInfo] = useState<ShopInfo>({
     name: 'Meri Dukaan',
     upiId: 'dukaan@upi',
@@ -287,14 +288,16 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentUser || !supabase || readyUserId !== currentUser.id) return;
 
     const client = supabase;
+    const userId = currentUser.id;
+    const snapshot = {
+      user_id: userId,
+      customers,
+      shop_info: shopInfo,
+      updated_at: new Date().toISOString(),
+    };
     const saveStoreData = async () => {
       try {
-        const { error } = await client.from('store_data').upsert({
-          user_id: currentUser.id,
-          customers,
-          shop_info: shopInfo,
-          updated_at: new Date().toISOString(),
-        });
+        const { error } = await client.from('store_data').upsert(snapshot);
         if (error) {
           setCloudError(`Cloud save failed: ${error.message}`);
           showToast(`Cloud save failed: ${error.message}`);
@@ -308,7 +311,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     };
 
-    void saveStoreData();
+    saveQueueRef.current = saveQueueRef.current.then(saveStoreData, saveStoreData);
   }, [customers, shopInfo, currentUser, readyUserId]);
 
   // Auth: Login
