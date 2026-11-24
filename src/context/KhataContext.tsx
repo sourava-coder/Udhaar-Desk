@@ -135,6 +135,13 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const customersRef = useRef<Customer[]>([]);
+  const shopInfoRef = useRef<ShopInfo>({
+    name: 'Meri Dukaan',
+    upiId: 'dukaan@upi',
+    phone: '',
+    address: '',
+  });
   const [shopInfo, setShopInfo] = useState<ShopInfo>({
     name: 'Meri Dukaan',
     upiId: 'dukaan@upi',
@@ -210,6 +217,58 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setSelectedCustomerId(null);
   }, [currentUserId]);
 
+  const persistStoreData = (
+    nextCustomers: Customer[],
+    nextShopInfo: ShopInfo,
+  ): Promise<void> => {
+    if (!supabase || !currentUser) return Promise.resolve();
+
+    const client = supabase;
+    const userId = currentUser.id;
+    const snapshot = {
+      user_id: userId,
+      customers: nextCustomers,
+      shop_info: nextShopInfo,
+      updated_at: new Date().toISOString(),
+    };
+
+    const save = async () => {
+      let lastError: string | null = null;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          const { error } = await client.from('store_data').upsert(snapshot);
+          if (!error) {
+            setCloudError(null);
+            return;
+          }
+          lastError = error.message;
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : 'Unknown error';
+        }
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+        }
+      }
+
+      if (lastError) {
+        setCloudError(`Cloud save failed: ${lastError}`);
+        showToast(`Could not save to cloud: ${lastError}`);
+      }
+    };
+
+    saveQueueRef.current = saveQueueRef.current.then(save, save);
+    return saveQueueRef.current;
+  };
+
+  const commitCustomers = (updater: (previous: Customer[]) => Customer[]) => {
+    const next = updater(customersRef.current);
+    customersRef.current = next;
+    setCustomers(next);
+    if (currentUser && readyUserId === currentUser.id) {
+      void persistStoreData(next, shopInfoRef.current);
+    }
+  };
+
   useEffect(() => {
     if (!currentUser || !supabase) {
       setCustomers([]);
@@ -242,13 +301,17 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
 
         if (data) {
-          setCustomers((data.customers as Customer[]) || []);
-          setShopInfo((data.shop_info as ShopInfo) || {
+          const loadedCustomers = (data.customers as Customer[]) || [];
+          const loadedShopInfo = (data.shop_info as ShopInfo) || {
             name: currentUser.shopName,
             upiId: currentUser.upiId || '',
             phone: currentUser.phone,
             address: currentUser.address || '',
-          });
+          };
+          customersRef.current = loadedCustomers;
+          shopInfoRef.current = loadedShopInfo;
+          setCustomers(loadedCustomers);
+          setShopInfo(loadedShopInfo);
         } else {
           const initialShop: ShopInfo = {
             name: currentUser.shopName,
@@ -256,6 +319,8 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             phone: currentUser.phone,
             address: currentUser.address || '',
           };
+          customersRef.current = [];
+          shopInfoRef.current = initialShop;
           setCustomers([]);
           setShopInfo(initialShop);
           const { error: insertError } = await client.from('store_data').insert({
@@ -283,36 +348,6 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       isMounted = false;
     };
   }, [currentUser]);
-
-  useEffect(() => {
-    if (!currentUser || !supabase || readyUserId !== currentUser.id) return;
-
-    const client = supabase;
-    const userId = currentUser.id;
-    const snapshot = {
-      user_id: userId,
-      customers,
-      shop_info: shopInfo,
-      updated_at: new Date().toISOString(),
-    };
-    const saveStoreData = async () => {
-      try {
-        const { error } = await client.from('store_data').upsert(snapshot);
-        if (error) {
-          setCloudError(`Cloud save failed: ${error.message}`);
-          showToast(`Cloud save failed: ${error.message}`);
-        } else {
-          setCloudError(null);
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        setCloudError(`Cloud save failed: ${message}`);
-        showToast(`Cloud save failed: ${message}`);
-      }
-    };
-
-    saveQueueRef.current = saveQueueRef.current.then(saveStoreData, saveStoreData);
-  }, [customers, shopInfo, currentUser, readyUserId]);
 
   // Auth: Login
   const login = async (email: string, password?: string) => {
@@ -450,6 +485,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       const updatedUser = toUser(data.user);
       setCurrentUser(updatedUser);
+      shopInfoRef.current = nextShopInfo;
       setShopInfo(nextShopInfo);
       showToast(t.storeProfileUpdated);
       return { success: true };
@@ -493,6 +529,8 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return;
       }
       setCurrentUser(null);
+      customersRef.current = [];
+      shopInfoRef.current = { name: 'Meri Dukaan', upiId: 'dukaan@upi', phone: '', address: '' };
       setSelectedCustomerId(null);
       setCurrentScreen('home');
       setIsUserModalOpen(false);
@@ -512,6 +550,8 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
       await supabase.auth.signOut({ scope: 'local' });
       setCurrentUser(null);
+      customersRef.current = [];
+      shopInfoRef.current = { name: 'Meri Dukaan', upiId: 'dukaan@upi', phone: '', address: '' };
       setCustomers([]);
       setSelectedCustomerId(null);
       setCurrentScreen('home');
@@ -523,7 +563,11 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const updateShopInfo = (info: ShopInfo) => {
+    shopInfoRef.current = info;
     setShopInfo(info);
+    if (currentUser && readyUserId === currentUser.id) {
+      void persistStoreData(customersRef.current, info);
+    }
     showToast('Dukaan UPI & details save ho gayi!');
   };
 
@@ -532,15 +576,18 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const addCustomer = (name: string, phone: string, address?: string): Customer => {
+    const uniqueId = typeof crypto?.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const newCust: Customer = {
-      id: 'c_' + Date.now(),
+      id: 'c_' + uniqueId,
       name: name.trim(),
       phone: phone.trim(),
       address: address?.trim(),
       createdAt: new Date().toISOString().split('T')[0],
       transactions: [],
     };
-    setCustomers((prev) => [newCust, ...prev]);
+    commitCustomers((prev) => [newCust, ...prev.filter((customer) => customer.id !== newCust.id)]);
     return newCust;
   };
 
@@ -561,8 +608,11 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     date: string;
     sendWhatsApp?: boolean;
   }) => {
+    const uniqueTransactionId = typeof crypto?.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const newTx: Transaction = {
-      id: 't_' + Date.now(),
+      id: 't_' + uniqueTransactionId,
       type,
       amount: Math.abs(amount),
       items: items.trim() || (type === 'UDHAAR' ? 'Kirana Samaan' : 'Cash / UPI Jama'),
@@ -570,7 +620,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       createdAt: Date.now(),
     };
 
-    const existingCustomer = customers.find((c) => c.id === customerId) || customerSeed;
+    const existingCustomer = customersRef.current.find((c) => c.id === customerId) || customerSeed;
     const updatedCustomer = existingCustomer
       ? {
           ...existingCustomer,
@@ -585,7 +635,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       : 0;
 
     if (updatedCustomer) {
-      setCustomers((prev) => {
+      commitCustomers((prev) => {
         const found = prev.some((c) => c.id === customerId);
         return found
           ? prev.map((c) => (c.id === customerId ? updatedCustomer : c))
@@ -636,7 +686,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const deleteTransaction = (customerId: string, transactionId: string) => {
-    setCustomers((prev) =>
+    commitCustomers((prev) =>
       prev.map((c) => {
         if (c.id === customerId) {
           return {
@@ -651,7 +701,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const deleteCustomer = (customerId: string) => {
-    setCustomers((prev) => prev.filter((c) => c.id !== customerId));
+    commitCustomers((prev) => prev.filter((c) => c.id !== customerId));
     if (selectedCustomerId === customerId) {
       setSelectedCustomerId(null);
       setCurrentScreen('home');
@@ -672,7 +722,7 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return undefined;
     }
     if (!customer.shareToken) {
-      setCustomers((prev) =>
+      commitCustomers((prev) =>
         prev.map((c) => (c.id === customerId ? { ...c, shareToken } : c))
       );
     }
@@ -704,14 +754,19 @@ export const KhataProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const resetToDefaultData = () => {
     if (!currentUser) return;
-    setCustomers([]);
     const initialShop: ShopInfo = {
       name: currentUser.shopName,
       upiId: currentUser.upiId || '',
       phone: currentUser.phone,
       address: currentUser.address || '',
     };
+    customersRef.current = [];
+    shopInfoRef.current = initialShop;
+    setCustomers([]);
     setShopInfo(initialShop);
+    if (readyUserId === currentUser.id) {
+      void persistStoreData([], initialShop);
+    }
     showToast('Data reset ho gaya (0 grahak)!');
   };
 

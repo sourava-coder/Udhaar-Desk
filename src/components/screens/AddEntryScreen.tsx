@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useKhata } from '../../context/KhataContext';
 import { Customer, TransactionType } from '../../types';
 import {
@@ -50,6 +50,8 @@ export const AddEntryScreen: React.FC = () => {
     waUrl?: string;
     customerId: string;
   } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const saveLockRef = useRef(false);
 
   useEffect(() => {
     if (selectedCustomerId) {
@@ -85,10 +87,15 @@ export const AddEntryScreen: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (saveLockRef.current) return;
+    saveLockRef.current = true;
+    setIsSaving(true);
     const numAmount = parseFloat(amount);
 
     if (isNaN(numAmount) || numAmount <= 0) {
       showToast(t.amountLabel);
+      saveLockRef.current = false;
+      setIsSaving(false);
       return;
     }
 
@@ -99,6 +106,8 @@ export const AddEntryScreen: React.FC = () => {
     if (isNewCust || selectedCustId === 'NEW') {
       if (!newName.trim()) {
         showToast(t.customerFullName);
+        saveLockRef.current = false;
+        setIsSaving(false);
         return;
       }
       const created = addCustomer(newName, newPhone, newAddress);
@@ -109,6 +118,8 @@ export const AddEntryScreen: React.FC = () => {
       const found = customers.find((c) => c.id === selectedCustId);
       if (!found) {
         showToast('Customer error');
+        saveLockRef.current = false;
+        setIsSaving(false);
         return;
       }
       targetCustName = found.name;
@@ -139,6 +150,8 @@ export const AddEntryScreen: React.FC = () => {
       waUrl,
       customerId: targetCustId,
     });
+    saveLockRef.current = false;
+    setIsSaving(false);
   };
 
   return (
@@ -406,6 +419,7 @@ export const AddEntryScreen: React.FC = () => {
         {/* SUBMIT BUTTON */}
         <button
           type="submit"
+          disabled={isSaving}
           className={`w-full py-4 px-4 rounded-2xl font-black text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-white cursor-pointer lg:col-span-2 ${
             entryType === 'UDHAAR'
               ? 'bg-red-600 hover:bg-red-700 shadow-red-200'
